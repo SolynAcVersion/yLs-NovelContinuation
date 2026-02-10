@@ -251,17 +251,15 @@ def get_prompt_gen_analysis(prev_desc: str, content_part: str):
 def main():
     # model initializaition
     # params: API_KEY, client, model
-    API_KEY = input("请输入你 Doubao 的 API_KEY ：")
+    API_KEY = input("请输入你 Deepseek 的 API_KEY ：")
     if not API_KEY:
-        API_KEY = os.environ.get("DOUBAO_API_KEY")
+        API_KEY = os.environ.get("DEEPSEEK_API_KEY")
         if not API_KEY:
             raise ValueError("未提供 API_KEY")
-    client = OpenAI(
-        api_key=API_KEY, base_url="https://ark.cn-beijing.volces.com/api/v3"
-    )
+    client = OpenAI(api_key=API_KEY, base_url="https://api.deepseek.com")
     # print("选择模型：\n1. 普通聊天 (deepseek-chat)\n2. 推理 (deepseek-reasoner)\n")
     # tmp_model_idx = input("输入序号（选择 1 或 2 ，默认为 1）：")
-    model = "doubao-seed-1-6-flash-250828"
+    model = "deepseek-reasoner"
     # if tmp_model_idx == 2:
     #    model = "deepseek-reasoner"
 
@@ -376,7 +374,7 @@ def main():
                     "role": "user",
                     "content": get_prompt_gen_analysis_init(content_str[0]),
                 },
-                {"role": "assistant", "content": last_lines},
+                {"role": "assistant", "content": first_reply_str},
                 {"role": "user", "content": continue_prompt},
             ],
             stream=False,
@@ -476,7 +474,7 @@ def main():
                             "role": "user",
                             "content": get_prompt_gen_analysis_init("上文给出"),
                         },
-                        {"role": "assistant", "content": last_lines},
+                        {"role": "assistant", "content": reply_str},
                         {"role": "user", "content": continue_prompt},
                     ],
                     stream=False,
