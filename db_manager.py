@@ -42,7 +42,7 @@ class NovelDB:
             print(f"检查存在失败：{e}")
             return False
 
-    def create_new_table(self) -> bool:
+    def create_new_table(self):
         """
         create new table for the new book waiting to be analyzed
         """
@@ -85,19 +85,16 @@ class NovelDB:
             """)
 
             self.conn.commit()
-            print("创建成功")
-            return True
+            print("")
+            return (True, "")
 
         except Exception as e:
-            print(f"创建失败：{e}")
-            self.conn.rollback()
-            return False
+            return (False, f"创建失败：{e}")
 
-    def add(self, table_name: str, data: Dict[str, Any]) -> bool:
+    def add(self, table_name: str, data: Dict[str, Any]):
         try:
             if table_name not in ["characters", "plot", "style", "ai_summary"]:
-                print(f"不支持的表名：{table_name}")
-                return False
+                return (False, f"不支持的表名：{table_name}")
             columns = ", ".join(data.keys())
             placeholders = ", ".join(["?" for _ in data])
             values = list(data.values())
@@ -112,25 +109,20 @@ class NovelDB:
             else:
                 inserted_id = self.cursor.lastrowid
 
-            print(f"成功添加到{table_name}, ID: {inserted_id}")
-            return True
+            return (True, f"成功添加到{table_name}, ID: {inserted_id}")
 
         except sql.IntegrityError as e:
-            print("添加失败！主键冲突！")
             self.conn.rollback()
-            return False
+            return (False, "添加失败！主键冲突！")
         except Exception as e:
-            print(f"添加失败！{e}")
             self.conn.rollback()
-            return False
+            return (False, f"添加失败！{e}")
 
-    def read(
-        self, table_name: str, record_id: Optional[Union[str, int]] = None
-    ) -> Optional[Union[List[Dict], dict]]:
+    def read(self, table_name: str, record_id: Optional[Union[str, int]] = None):
         try:
             if table_name not in ["characters", "plot", "style", "ai_summary"]:
-                print(f"不支持的表名：{table_name}")
-                return None
+                print()
+                return (False, f"不支持的表名：{table_name}")
             if record_id is None:
                 sql_ = f"SELECT * FROM {table_name}"
                 self.cursor.execute(sql_)
@@ -138,7 +130,7 @@ class NovelDB:
 
                 res = [dict(row) for row in rows]
                 print(f"从{table_name} 读取了 {len(res)} 条记录")
-                return res
+                return (True, res)
             else:
                 sql_ = f"SELECT * FROM {table_name} WHERE id = ?"
                 self.cursor.execute(sql_, (record_id,))
@@ -147,24 +139,19 @@ class NovelDB:
                 if row:
                     res = dict(row)
                     print(f"从{table_name}读取记录：{record_id}")
-                    return res
+                    return (True, res)
                 else:
-                    print(f"记录不存在！{table_name}/{record_id}")
-                    return None
+                    return (False, f"记录不存在！{table_name}/{record_id}")
         except Exception as e:
-            print(f"读取失败！{e}")
-            return None
+            return (False, f"读取失败！{e}")
 
-    def update(
-        self, table_name: str, record_id: Union[int, str], data: Dict[str, Any]
-    ) -> bool:
+    def update(self, table_name: str, record_id: Union[int, str], data: Dict[str, Any]):
         try:
             if table_name not in ["characters", "plot", "style", "ai_summary"]:
                 print(f"不支持的表名：{table_name}")
-                return False
+                return (False, f"不支持的表名：{table_name}")
             if not self._record_exists(table_name, record_id):
-                print(f"记录不存在：{table_name}/{record_id}")
-                return False
+                return (False, f"记录不存在！{table_name}/{record_id}")
 
             set_clause = ", ".join([f"{key} = ?" for key in data.keys()])
             values = list(data.values())
@@ -176,9 +163,8 @@ class NovelDB:
             self.conn.commit()
 
             print(f"更新成功！{table_name}/{record_id}")
-            return True
+            return (True, "")
 
         except Exception as e:
-            print(f"更新失败！{e}")
             self.conn.rollback()
-            return False
+            return (False, f"更新失败！{e}")
